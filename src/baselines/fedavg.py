@@ -93,7 +93,11 @@ def train_fedavg(
 
     historical_updates = {}
     global_checkpoints = {0: clone_weights(global_model)}
-    train_history = {"test_acc": [], "test_loss": []}
+    train_history = {
+        "train_acc": [], "train_loss": [], 
+        "test_acc": [], "test_loss": [], 
+        "cumulative_time": []
+    }
 
     start_time = time.time()
 
@@ -127,12 +131,24 @@ def train_fedavg(
         load_weights(global_model, new_global_weights)
         global_checkpoints[round_idx] = clone_weights(global_model)
 
+        # Measure training metrics across active clients
+        train_accs, train_losses = [], []
+        for cid in active_client_ids:
+            c_acc, c_loss = evaluate_model(global_model, client_loaders[cid], device=device)
+            train_accs.append(c_acc)
+            train_losses.append(c_loss)
+        avg_train_acc = sum(train_accs) / len(train_accs)
+        avg_train_loss = sum(train_losses) / len(train_losses)
+
         test_acc, test_loss = evaluate_model(global_model, test_loader, device=device)
+        train_history["train_acc"].append(avg_train_acc)
+        train_history["train_loss"].append(avg_train_loss)
         train_history["test_acc"].append(test_acc)
         train_history["test_loss"].append(test_loss)
+        train_history["cumulative_time"].append(time.time() - start_time)
 
         if verbose and (round_idx % 5 == 0 or round_idx == num_rounds):
-            print(f"Round {round_idx:02d}/{num_rounds:02d} | Test Acc: {test_acc:.2f}% | Test Loss: {test_loss:.4f}")
+            print(f"Round {round_idx:02d}/{num_rounds:02d} | Train Acc: {avg_train_acc:.2f}% | Test Acc: {test_acc:.2f}% | Test Loss: {test_loss:.4f}")
 
     elapsed_time = time.time() - start_time
     if verbose:

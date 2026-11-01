@@ -14,7 +14,7 @@ from src.models import AdultMLP, clone_weights
 from src.baselines.fedavg import train_fedavg
 from src.unlearning.federaser import run_federaser
 from src.metrics.evaluate import evaluate_all_metrics
-from src.metrics.plots import generate_paper_plots
+from src.metrics.plots import generate_paper_plots, generate_time_and_data_plots
 
 def main():
     # Set random seeds for reproducibility
@@ -123,6 +123,15 @@ def main():
         summary_metrics=summary_metrics,
         output_dir="results",
         filename="federaser_evaluation_plots.png"
+    )
+    print(">>> Generating Time Consumption and Data Breakdown Plots...")
+    generate_time_and_data_plots(
+        orig_history=orig_history,
+        retrain_history=retrain_history,
+        unlearn_history=unlearn_history,
+        summary_metrics=summary_metrics,
+        output_dir="results",
+        filename="federaser_time_and_data_plots.png"
     )
 
 if __name__ == "__main__":

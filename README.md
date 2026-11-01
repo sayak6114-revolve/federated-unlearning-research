@@ -136,6 +136,15 @@ The 4-panel publication-style evaluation plot generated directly by our pipeline
 3. **Bottom-Left (MIA Privacy Audit ROC Curves):** FedEraser's ROC curve hugs the diagonal random-guess line ($y=x$), proving privacy compliance.
 4. **Bottom-Right (Computational Efficiency):** Wall-clock time comparison demonstrating real-world speedup.
 
+### Training vs. Testing Data & Time Consumption Breakdown
+
+![FedEraser Time and Data Analysis](results/federaser_time_and_data_plots.png)
+
+1. **Top-Left (Cumulative Time across Rounds):** Direct comparison of cumulative wall-clock time showing the significant time savings achieved at every calibration round.
+2. **Top-Right (Train Loss vs. Test Loss):** Evaluates training loss vs. test loss trajectories across rounds to verify that the unlearned model generalizes properly without overfitting or divergence.
+3. **Bottom-Left (Training vs. Testing vs. Forgotten Accuracy):** Compares performance across the 3 datasets: Retained Training Data, Held-out Test Data, and Forgotten Client Private Data.
+4. **Bottom-Right (Computation Rate):** Seconds per round (s/round) comparing full retraining vs. lightweight FedEraser calibration.
+
 ---
 
 ## 6. Repository Structure
@@ -151,7 +160,8 @@ federated-unlearning-research/
 │   ├── 00_survey_romandini_2024.md    # Survey notes (Romandini et al.)
 │   └── 01_federaser_2021.md           # FedEraser paper breakdown
 ├── results/
-│   └── federaser_evaluation_plots.png # High-res 4-panel evaluation figure (300 DPI)
+│   ├── federaser_evaluation_plots.png # High-res 4-panel evaluation figure (300 DPI)
+│   └── federaser_time_and_data_plots.png # High-res time & data breakdown figure (300 DPI)
 ├── experiments/
 │   └── run_adult_experiment.py        # End-to-end benchmark runner
 └── src/

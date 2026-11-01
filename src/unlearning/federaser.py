@@ -51,7 +51,11 @@ def run_federaser(
     # Initialize unlearned model at round 0
     unlearned_model = AdultMLP(input_dim).to(device)
     load_weights(unlearned_model, initial_weights)
-    unlearn_history = {"test_acc": [], "test_loss": []}
+    unlearn_history = {
+        "train_acc": [], "train_loss": [], 
+        "test_acc": [], "test_loss": [], 
+        "cumulative_time": []
+    }
 
     if verbose:
         print(f"\n=======================================================")
@@ -103,12 +107,24 @@ def run_federaser(
         new_unlearned_weights = apply_update(current_unlearned_weights, aggregated_update)
         load_weights(unlearned_model, new_unlearned_weights)
 
+        # Measure training metrics across retained clients
+        train_accs, train_losses = [], []
+        for cid in retained_client_ids:
+            c_acc, c_loss = evaluate_model(unlearned_model, client_loaders[cid], device=device)
+            train_accs.append(c_acc)
+            train_losses.append(c_loss)
+        avg_train_acc = sum(train_accs) / len(train_accs)
+        avg_train_loss = sum(train_losses) / len(train_losses)
+
         test_acc, test_loss = evaluate_model(unlearned_model, test_loader, device=device)
+        unlearn_history["train_acc"].append(avg_train_acc)
+        unlearn_history["train_loss"].append(avg_train_loss)
         unlearn_history["test_acc"].append(test_acc)
         unlearn_history["test_loss"].append(test_loss)
+        unlearn_history["cumulative_time"].append(time.time() - start_time)
 
         if verbose and (round_idx % 5 == 0 or round_idx == num_rounds):
-            print(f"Calibration Round {round_idx:02d}/{num_rounds:02d} | Test Acc: {test_acc:.2f}% | Test Loss: {test_loss:.4f}")
+            print(f"Calibration Round {round_idx:02d}/{num_rounds:02d} | Train Acc: {avg_train_acc:.2f}% | Test Acc: {test_acc:.2f}% | Test Loss: {test_loss:.4f}")
 
     elapsed_time = time.time() - start_time
     if verbose:
