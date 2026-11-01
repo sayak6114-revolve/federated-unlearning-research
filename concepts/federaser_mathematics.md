@@ -109,34 +109,34 @@ This exponential divergence is known as **Trajectory Drift**.
 
 ---
 
-### Phase 4: Calibration Training Mechanism
+### The 4 Algorithmic Steps of FedEraser (Algorithm 1)
 
-To eliminate trajectory drift without full retraining, FedEraser selects a set of calibration time steps $t_j \in \{t_1, t_2, \dots, t_S\} \subseteq \{1, \dots, T\}$.
+To eliminate trajectory drift without full retraining, FedEraser executes **four exact steps** at each calibration round $t_j \in \{1, 2, \dots, T\}$:
 
-#### Step A: Client-Side Calibration Training
+#### Step 1: Calibration Training (Client-Side)
 At calibration round $t_j$, the server broadcasts the current unlearned global model $M_{t_j}^f$ to all retained clients $k_c \in \mathcal{C}$.
 
 Each client computes a fresh local update starting from $M_{t_j}^f$ for a very small number of epochs ($E_{\text{cali}} \ll E$, typically $E_{\text{cali}} = 1$):
 
-$$\tilde{U}_{k_c}^{t_j} \leftarrow \text{LocalSGD}\left(M_{t_j}^f, D_{k_c}, E_{\text{cali}}\right)$$
+$$\tilde{U}_{k_c}^{t_j} \leftarrow \text{CaliTrain}\left(C_{k_c}, M_{t_j}^f, E_{\text{cali}}\right)$$
 
-#### Step B: Server-Side Update Calibration Equation
+#### Step 2: Update Calibrating (Server-Side)
 The server adjusts the cached historical update $U_{k_c}^{t_j}$ using the newly received gradient information $\tilde{U}_{k_c}^{t_j}$:
 
 $$\tilde{e}_{k_c}^{t_j} = \frac{\|\tilde{U}_{k_c}^{t_j}\|_2}{\|U_{k_c}^{t_j}\|_2} \cdot U_{k_c}^{t_j}$$
 
-#### Mathematical Insight of this Equation:
+**Mathematical Insight of this Equation:**
 1. **Direction Component ($U_{k_c}^{t_j}$):** Preserves the original gradient direction computed during extensive local training rounds. It represents the historical trajectory of feature learning.
 2. **Magnitude Ratio ($\frac{\|\tilde{U}_{k_c}^{t_j}\|_2}{\|U_{k_c}^{t_j}\|_2}$):** Acts as a dynamic curvature scaling factor.
    - If $\|\tilde{U}_{k_c}^{t_j}\| < \|U_{k_c}^{t_j}\|$, the unlearned model is closer to a local minimum or in a flatter region of the loss surface for client $k_c$, so the step size is safely compressed.
    - If $\|\tilde{U}_{k_c}^{t_j}\| > \|U_{k_c}^{t_j}\|$, the unlearned model is on a steep slope, scaling up the step size to accelerate convergence toward the retrained trajectory.
 
-#### Step C: Calibrated Aggregation
-The server computes the aggregated calibrated update for the round:
+#### Step 3: Calibrated Update Aggregating (Server-Side)
+The server computes the aggregated calibrated update across retained clients:
 
 $$\tilde{U}_e^{t_j} = \sum_{k_c \in \mathcal{C}} q_{k_c} \tilde{e}_{k_c}^{t_j}$$
 
-#### Step D: Global Model Update
+#### Step 4: Unlearned Model Updating (Server-Side)
 The unlearned global model advances to the next calibration checkpoint:
 
 $$M_{t_j+1}^f = M_{t_j}^f + \tilde{U}_e^{t_j}$$

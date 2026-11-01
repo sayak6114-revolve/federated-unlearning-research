@@ -70,18 +70,16 @@ def run_federaser(
         calibrated_updates = {}
 
         for cid in retained_client_ids:
-            # Step A: Client-side calibration training (1 epoch on current unlearned model)
+            # Step 1: Calibration Training (Client-side: 1 epoch on current unlearned model)
             cali_model = AdultMLP(input_dim).to(device)
             load_weights(cali_model, current_unlearned_weights)
             _, fresh_update = client_local_train(
                 cali_model, client_loaders[cid], epochs=calibration_epochs, lr=lr, device=device
             )
 
-            # Step B: Retrieve cached historical update
-            historical_u = historical_updates[round_idx][cid]
-
-            # Step C: Compute norms and scale historical update
+            # Step 2: Update Calibrating (Server-side: scale historical update by norm ratio)
             # e~ = (||U_fresh|| / ||U_hist||) * U_hist
+            historical_u = historical_updates[round_idx][cid]
             norm_fresh = compute_l2_norm(fresh_update)
             norm_hist = compute_l2_norm(historical_u)
 
@@ -96,14 +94,14 @@ def run_federaser(
             }
             calibrated_updates[cid] = calibrated_vector
 
-        # Step D: Calibrated update aggregation: U_e = sum(q_k * e~_k)
+        # Step 3: Calibrated Update Aggregating (Server-side: U_e = sum(q_k * e~_k))
         aggregated_update = {k: torch.zeros_like(v) for k, v in current_unlearned_weights.items()}
         for cid in retained_client_ids:
             weight = q_weights[cid]
             for param_name in aggregated_update:
                 aggregated_update[param_name] += weight * calibrated_updates[cid][param_name]
 
-        # Step E: Advance unlearned model trajectory: M_f^(t) = M_f^(t-1) + U_e
+        # Step 4: Unlearned Model Updating (Server-side: M_f^(t) = M_f^(t-1) + U_e)
         new_unlearned_weights = apply_update(current_unlearned_weights, aggregated_update)
         load_weights(unlearned_model, new_unlearned_weights)
 
