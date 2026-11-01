@@ -90,6 +90,8 @@ A successful federated unlearning method must balance three competing objectives
 federated-unlearning-research/
 ├── README.md               # Main project roadmap, problem formulation & metrics
 ├── .gitignore              # Ignores weights, datasets, checkpoints, logs
+├── concepts/               # Mathematical design and core formulations
+│   └── federaser_mathematics.md # Mathematical breakdown of FedEraser
 ├── papers/                 # Literature reviews and reading notes
 │   ├── template.md         # Reusable reading note template
 │   ├── 00_survey_romandini_2024.md
